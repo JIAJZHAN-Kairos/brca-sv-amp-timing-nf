@@ -17,6 +17,7 @@ process SVCLONE {
     """
     run_svclone.sh ${sample} ${sex} tumor.bam ${svs} ${cnv} ${pp} ${snv_vcf} ${task.cpus} ${params.snv_subsample} ${mean_cov}
     mkdir -p ${sample}
+    cp status.tsv ${sample}/svclone_status.tsv   # S3 work dirs drop empty directories
     """
 }
 
