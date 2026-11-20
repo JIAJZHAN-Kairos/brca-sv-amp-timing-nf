@@ -69,7 +69,8 @@ status=status.tsv; echo -e "sample\tstep\texit" > $status
 run() { local step=$1; shift; echo "== $step: $*"; "$@"; local rc=$?; echo -e "$s\t$step\t$rc" >> $status; return $rc; }
 run annotate svclone annotate -i "$svs" -b "$bam" -s "$s" --sv_format simple -cfg svclone.ini &&
 run count svclone count -i "$s/${s}_svin.txt" -b "$bam" -s "$s" -cfg svclone.ini &&
-run filter svclone filter -s "$s" -i "$s/${s}_svinfo.txt" -p "$pp" -c "$cnv" --snvs "$snv" --snv_format mutect -cfg svclone.ini &&
+run snv_vcf minimal_snv_vcf.py "$snv" "$s" snvs.min.vcf &&
+run filter svclone filter -s "$s" -i "$s/${s}_svinfo.txt" -p "$pp" -c "$cnv" --snvs snvs.min.vcf --snv_format mutect -cfg svclone.ini &&
 run cluster svclone cluster -s "$s" -cfg svclone.ini $sexflag --subsample "$nsub" --ss_seed 20261120 &&
 run postassign svclone postassign -s "$s"
 true
