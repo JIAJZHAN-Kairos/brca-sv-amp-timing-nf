@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 # SVclone 1.1.4 for one sample: annotate -> count -> filter (SVs + SNVs, CNV, purity) -> cluster -> postassign
 # (SVs assigned to the SNV model). Each step's exit status is recorded; later steps are skipped after a failure.
-# Usage: run_svclone.sh <sample> <sex> <bam> <svs> <cnv> <purity_ploidy> <snv_vcf> <cpus> <snv_subsample>
+# Usage: run_svclone.sh <sample> <sex> <bam> <svs> <cnv> <purity_ploidy> <snv_vcf> <cpus> <snv_subsample> <mean_cov>
+# read_len is fixed at 151: DRAGEN adapter-trims reads, and SVclone's read-length estimate errors on mixed lengths.
 set -uo pipefail
-s=$1; sex=$2; bam=$3; svs=$4; cnv=$5; pp=$6; snv=$7; cpus=$8; nsub=$9
+s=$1; sex=$2; bam=$3; svs=$4; cnv=$5; pp=$6; snv=$7; cpus=$8; nsub=$9; cov=${10}
 chroms=$(printf 'chr%s,' $(seq 1 22) X | sed 's/,$//')
 cat > svclone.ini <<INI
 [BamParameters]
-read_len: -1
+read_len: 151
 insert_mean: -1
 insert_std: -1
-mean_cov: 50
+mean_cov: ${cov}
 max_cn: 10
 [SVannotateParameters]
 use_dir: True
