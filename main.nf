@@ -60,6 +60,28 @@ process AMPTIMER_GW {
     """
 }
 
+process LEAGUE {
+    tag "$group"
+    publishDir "${params.outdir}", mode: 'copy'
+
+    input:
+    tuple val(group), path(samples_txt), path(comps)
+
+    output:
+    path "${group}"
+
+    script:
+    """
+    run_league.sh ${group} ${samples_txt} ${task.cpus}
+    mv c/${group} ${group}
+    """
+
+    stub:
+    """
+    mkdir ${group}; cp ${samples_txt} ${group}/samples.txt; ls *.comp.tsv | wc -l > ${group}/n_comps.txt
+    """
+}
+
 workflow {
     if (params.run_svclone) {
         Channel.fromPath(params.svclone_manifest, checkIfExists: true)
@@ -75,6 +97,18 @@ workflow {
     }
     if (params.run_amptimer) {
         AMPTIMER(file(params.amptimer_inputs, checkIfExists: true, type: 'dir'))
+    }
+    if (params.league_group) {
+        // PhylogicNDT LeagueModel on a custom group; comp.tsv files read from the PhylogicNDT SASH run on S3
+        def ss = params.league_samples.tokenize(',')
+        def comps = ss.collect { s ->
+            def r = s in ['L2500672', 'L2501561'] ? 'results_add2' : 'results'
+            file("${params.phylogic_prefix}/${r}/samples/${s}.run/results/${s}/${s}.comp.tsv", checkIfExists: true)
+        }
+        Channel.of(ss.join('\n') + '\n')
+            .collectFile(name: "${params.league_group}_samples.txt")
+            .map { f -> tuple(params.league_group, f, comps) }
+            | LEAGUE
     }
     if (params.run_amptimer_gw) {
         def gw = params.amptimer_gw_inputs
